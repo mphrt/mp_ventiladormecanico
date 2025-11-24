@@ -285,7 +285,7 @@ def main():
             "2.1.           Volumen",
             "2.2.           Presiones",
             "2.3.           Flujo",
-            "2.4.           FiO₂",
+            "2.4.           FiO%",
             "2.5.           Frecuencia",
             "2.6.           Relación I:E",
         ],
@@ -711,3 +711,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
