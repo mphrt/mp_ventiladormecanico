@@ -1289,137 +1289,58 @@ def main():
         text_block_w = max(w_rc, w_pi, w_pc) + 12
 
         half_w = ancho_area / 2.0
-
         max_line_len = half_w - 8
-
         line_len = min(max(text_block_w, 65), max_line_len)
-
-
-
         sig_w = min(65, line_len - 6)
-
         sig_h = 20
-
-
-
         SIG_OFF_X_LEFT = 15
-
         SIG_OFF_Y_LEFT = 0
-
         SIG_OFF_X_RIGHT = 15
-
         SIG_OFF_Y_RIGHT = 0
-
-
-
         y_top = pdf.get_y()
-
         y_sig = y_top + 2.0
-
-
-
         x_line_left = center_left - line_len / 2.0
-
         x_line_right = center_right - line_len / 2.0
-
-
-
         add_signature_inline(
-
             pdf,
-
             canvas_result_ingenieria,
-
             x=center_left - sig_w / 2.0 + SIG_OFF_X_LEFT,
-
             y=y_sig + SIG_OFF_Y_LEFT,
-
             w_mm=sig_w,
-
             h_mm=sig_h,
-
         )
-
         add_signature_inline(
-
             pdf,
-
             canvas_result_clinico,
-
             x=center_right - sig_w / 2.0 + SIG_OFF_X_RIGHT,
-
             y=y_sig + SIG_OFF_Y_RIGHT,
-
             w_mm=sig_w,
-
             h_mm=sig_h,
-
         )
-
-
-
         y_line = y_sig + sig_h + 3.0
-
         pdf.set_draw_color(0, 0, 0)
-
         pdf.line(x_line_left, y_line, x_line_left + line_len, y_line)
-
         pdf.line(x_line_right, y_line, x_line_right + line_len, y_line)
-
-
-
         pdf.set_xy(x_line_left, y_line + 0.8)
-
         pdf.cell(line_len, 3.6, "RECEPCIÓN CONFORME", 0, 2, "C")
-
         pdf.set_xy(x_line_left, pdf.get_y())
-
         pdf.cell(line_len, 3.6, "PERSONAL INGENIERÍA CLÍNICA", 0, 0, "C")
-
-
-
         pdf.set_xy(x_line_right, y_line + 0.8)
-
         pdf.cell(line_len, 3.6, "RECEPCIÓN CONFORME", 0, 2, "C")
-
         pdf.set_xy(x_line_right, pdf.get_y())
-
         pdf.cell(line_len, 3.6, "PERSONAL CLÍNICO", 0, 0, "C")
-
-
-
         pdf.set_y(max(y_line + 7, pdf.get_y()))
-
-
-
         out = pdf.output(dest="S")
-
         if isinstance(out, str):
-
             out = out.encode("latin1")
-
         else:
-
             out = bytes(out)
-
-
-
         st.download_button(
-
             "Descargar PDF",
-
             out,
-
             file_name=f"MP_Ventilador_{sn}.pdf",
-
             mime="application/pdf",
-
         )
-
-
-
-
-
 if __name__ == "__main__":
 
     main()
