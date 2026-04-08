@@ -62,10 +62,7 @@ def _crop_signature(canvas_result):
     img_byte_arr.seek(0)
     return img_byte_arr
 
-def add_signature_inline(pdf_obj, canvas_result, x_target_center, y, max_w=65, max_h=20):
-    """
-    Dibuja la firma centrada en x_target_center.
-    """
+def add_signature_inline(pdf_obj, canvas_result, x_target_center, y, max_w=65, max_h=20, centered=True):
     img_byte_arr = _crop_signature(canvas_result)
     if not img_byte_arr:
         return
@@ -75,14 +72,12 @@ def add_signature_inline(pdf_obj, canvas_result, x_target_center, y, max_w=65, m
     try:
         img = Image.open(tmp_path)
         img_w, img_h = img.size
-        
-        # Calcular escala manteniendo ratio
         ratio = min(max_w / img_w, max_h / img_h)
         final_w = img_w * ratio
         final_h = img_h * ratio
         
-        # Calcular X para que el centro de la imagen coincida con x_target_center
-        x_pos = x_target_center - (final_w / 2)
+        # Si centered es True, x_target_center es el centro. Si no, es la posición X inicial.
+        x_pos = x_target_center - (final_w / 2) if centered else x_target_center
         
         pdf_obj.image(tmp_path, x=x_pos, y=y, w=final_w, h=final_h)
     except Exception as e:
@@ -182,7 +177,7 @@ def main():
 
     marca = st.text_input("MARCA")
     modelo = st.text_input("MODELO")
-    sn = st.text_input("S/N")
+    sn = st.text_input("NÚMERO DE SERIE")
     ideq = st.text_input("IDEQ")
     inventario = st.text_input("N/INVENTARIO")
     fecha = st.date_input("FECHA", value=datetime.date.today())
@@ -257,7 +252,7 @@ def main():
         pdf.set_xy(logo_x + LOGO_W_MM + 4, 12)
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # ======= DATOS =======
+        # ======= DATOS EQUIPO =======
         content_y_base = 19
         pdf.set_y(content_y_base)
         line_h = 3.4
@@ -279,7 +274,7 @@ def main():
 
         left_field("MARCA", marca)
         left_field("MODELO", modelo)
-        left_field("S/N", sn)
+        left_field("NÚMERO DE SERIE", sn)
         left_field("N/INVENTARIO", inventario)
         left_field("UBICACIÓN", ubicacion)
 
@@ -301,45 +296,43 @@ def main():
         draw_si_no_boxes(pdf, SECOND_COL_LEFT, pdf.get_y(), operativo, label_w=40)
         pdf.ln(2)
         
-        # Firma Técnico (Centrada en su área)
+        # --- Firma Técnico ---
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
-        y_firma_txt = pdf.get_y()
+        y_nombre_tecnico = pdf.get_y()
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
         pdf.set_x(SECOND_COL_LEFT); pdf.cell(14, 4.6, "FIRMA:", 0, 0)
-        # Centro de la columna derecha para la firma del técnico
-        center_tecnico = SECOND_COL_LEFT + (col_total_w / 2)
-        add_signature_inline(pdf, canvas_result_tecnico, center_tecnico, y_firma_txt + 4, 55, 18)
         
-        pdf.set_y(y_firma_txt + 24)
+        # Firma con separación de 4mm y alineada a la izquierda (no centrada)
+        add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_nombre_tecnico + 4, 55, 18, centered=False)
+        
+        pdf.set_y(y_nombre_tecnico + 24)
         pdf.set_x(SECOND_COL_LEFT); pdf.cell(0, 4.0, f"EMPRESA RESPONSABLE: {empresa}", 0, 1)
         pdf.ln(2.0)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 15, "Observaciones (uso interno)", observaciones_interno)
 
-        # ======= RECEPCIÓN CONFORME (Centrado de firmas sobre líneas) =======
+        # ======= RECEPCIÓN CONFORME (Centrado en Columna 2) =======
         pdf.ln(10); y_sigs = pdf.get_y()
-        line_w = 45
-        gap_between_lines = 10
+        line_w = 40
+        gap_sigs = 8
+        total_block_w = (line_w * 2) + gap_sigs
         
-        # Coordenadas X de inicio de las líneas
-        x_line1 = SECOND_COL_LEFT
-        x_line2 = SECOND_COL_LEFT + line_w + gap_between_lines
+        # Calculamos el inicio para que el bloque de firmas esté centrado en la segunda columna
+        x_start_sigs = SECOND_COL_LEFT + (col_total_w / 2) - (total_block_w / 2)
+        x_line1 = x_start_sigs
+        x_line2 = x_start_sigs + line_w + gap_sigs
         
-        # Dibujar líneas
+        # Líneas
         pdf.line(x_line1, y_sigs + 15, x_line1 + line_w, y_sigs + 15)
         pdf.line(x_line2, y_sigs + 15, x_line2 + line_w, y_sigs + 15)
         
-        # Textos debajo de las líneas
+        # Textos
         pdf.set_font("Arial", "B", 6.5)
         pdf.set_xy(x_line1, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nINGENIERÍA CLÍNICA", 0, "C")
         pdf.set_xy(x_line2, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nPERSONAL CLÍNICO", 0, "C")
         
-        # Calcular centros de cada línea para las firmas
-        center_sig1 = x_line1 + (line_w / 2)
-        center_sig2 = x_line2 + (line_w / 2)
-        
-        # Añadir firmas centradas (y_sigs - altura_firma para que queden sobre la línea)
-        add_signature_inline(pdf, canvas_result_ingenieria, center_sig1, y_sigs - 2, 35, 15)
-        add_signature_inline(pdf, canvas_result_clinico, center_sig2, y_sigs - 2, 35, 15)
+        # Imágenes centradas sobre cada línea
+        add_signature_inline(pdf, canvas_result_ingenieria, x_line1 + (line_w/2), y_sigs - 2, 35, 15, centered=True)
+        add_signature_inline(pdf, canvas_result_clinico, x_line2 + (line_w/2), y_sigs - 2, 35, 15, centered=True)
 
         out = pdf.output(dest="S")
         final_filename = f"{ideq}_MP_Ventilador_{sn}.pdf" if ideq else f"MP_Ventilador_{sn}.pdf"
