@@ -245,8 +245,9 @@ def main():
         pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4)
         pdf.cell(ideq_w, 4.5, ideq_txt, border=1, align="C", fill=True)
 
+        # ======= AJUSTE: Título Bajado 6mm (de 12 a 18) =======
         pdf.set_font("Arial", "B", 7)
-        pdf.set_xy(logo_x + LOGO_W_MM + 4, 12) 
+        pdf.set_xy(logo_x + LOGO_W_MM + 4, 18) 
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
         # ======= PRIMERA COLUMNA (SUBIDA 10mm -> de 39 a 29) =======
@@ -285,7 +286,6 @@ def main():
         draw_analisis_columns(pdf, SIDE_MARGIN, pdf.get_y()+1, col_total_w, st.session_state.analisis_equipos)
 
         # ======= SEGUNDA COLUMNA (POSICIÓN ORIGINAL / NO MOVIDA) =======
-        # Ajustamos start_y_right para que coincida con el inicio original de las tablas
         start_y_right = 39 
         pdf.set_y(start_y_right)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 20, "Observaciones", observaciones)
@@ -297,7 +297,7 @@ def main():
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
         y_label_tecnico = pdf.get_y()
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
-        y_firma_tecnico = y_label_tecnico + 4.6 + 4.0 # 4mm de separación exacta
+        y_firma_tecnico = y_label_tecnico + 4.6 + 4.0 
         pdf.set_xy(SECOND_COL_LEFT, y_firma_tecnico)
         pdf.cell(14, 4.6, "FIRMA:", 0, 0)
         add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_firma_tecnico, 55, 18, centered=False)
