@@ -235,9 +235,8 @@ def main():
         FIRST_TAB_RIGHT = SIDE_MARGIN + col_total_w
         SECOND_COL_LEFT = FIRST_TAB_RIGHT + 6
 
-        # ======= ENCABEZADO (BAJADO 20mm) =======
-        # Originalmente y era 4 o 12. Ahora sumamos +20.
-        logo_x, logo_y, LOGO_W_MM = 2, 22, 60 # Antes y=2
+        # ======= ENCABEZADO (Restaurado a Posición Original) =======
+        logo_x, logo_y, LOGO_W_MM = 2, 2, 60
         try: pdf.image("logo_hrt_final.jpg", x=logo_x, y=logo_y, w=LOGO_W_MM)
         except: pass
 
@@ -245,15 +244,16 @@ def main():
         ideq_txt = f"IDEQ: {ideq}"
         ideq_w = pdf.get_string_width(ideq_txt) + 4
         pdf.set_fill_color(230, 230, 230)
-        pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 24) # Antes y=4
+        pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4) # Posición original
         pdf.cell(ideq_w, 4.5, ideq_txt, border=1, align="C", fill=True)
 
+        # Título de la Pauta (Bajado 20mm según solicitud anterior)
         pdf.set_font("Arial", "B", 7)
-        pdf.set_xy(logo_x + LOGO_W_MM + 4, 32) # Antes y=12
+        pdf.set_xy(logo_x + LOGO_W_MM + 4, 32) # Manteniendo el título bajo
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # ======= DATOS EQUIPO (BAJADO 20mm adicionales) =======
-        content_y_base = 39 # Antes y=19 (19 + 20 = 39)
+        # ======= DATOS EQUIPO (Bajado 20mm) =======
+        content_y_base = 39 # 19 original + 20 solicitado
         pdf.set_y(content_y_base)
         line_h = 3.4
         label_w = 35.0
@@ -299,20 +299,16 @@ def main():
         # --- Firma Técnico ---
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
         y_label_tecnico = pdf.get_y()
-        # El texto tiene una altura de 4.6
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
         
-        # Para dejar 4mm de separación exacta:
-        # y_label_tecnico + altura_celda(4.6) + 4mm = y_firma
+        # Separación de 4mm bajo el nombre
         y_firma_tecnico = y_label_tecnico + 4.6 + 4.0
-        
         pdf.set_xy(SECOND_COL_LEFT, y_firma_tecnico)
         pdf.cell(14, 4.6, "FIRMA:", 0, 0)
         
-        # Agregamos la firma alineada a la izquierda (centered=False)
         add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_firma_tecnico, 55, 18, centered=False)
         
-        pdf.set_y(y_firma_tecnico + 20) # Espacio para la firma
+        pdf.set_y(y_firma_tecnico + 20)
         pdf.set_x(SECOND_COL_LEFT); pdf.cell(0, 4.0, f"EMPRESA RESPONSABLE: {empresa}", 0, 1)
         pdf.ln(2.0)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 15, "Observaciones (uso interno)", observaciones_interno)
