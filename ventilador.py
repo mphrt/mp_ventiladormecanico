@@ -230,9 +230,11 @@ def main():
         page_w = pdf.w
         usable_w = page_w - 2 * SIDE_MARGIN
         col_total_w = (usable_w - 6) / 2.0
+        FIRST_TAB_RIGHT = SIDE_MARGIN + col_total_w
+        SECOND_COL_LEFT = FIRST_TAB_RIGHT + 6
 
-        # ======= ENCABEZADO (LOGO) =======
-        logo_x, logo_y, LOGO_W_MM = SIDE_MARGIN, 4, 60
+        # ======= ENCABEZADO =======
+        logo_x, logo_y, LOGO_W_MM = 2, 2, 60
         try: pdf.image("logo_hrt_final.jpg", x=logo_x, y=logo_y, w=LOGO_W_MM)
         except: pass
 
@@ -244,47 +246,42 @@ def main():
         pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4)
         pdf.cell(ideq_w, 4.5, ideq_txt, border=1, align="C", fill=True)
 
-        # ======= DATOS ABAJO DEL LOGO =======
-        # Iniciamos justo debajo de donde termina el logo (y=4 + altura proporcional del logo aprox)
-        # O definimos una posición fija para asegurar espacio
-        current_y = 18 
-        line_h = 4.2
-        label_w = 38.0
+        # Título al lado del logo en la parte inferior del bloque encabezado
+        pdf.set_font("Arial", "B", 8)
+        pdf.set_xy(logo_x + LOGO_W_MM + 4, 10)
+        pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # Título
-        pdf.set_xy(SIDE_MARGIN, current_y)
-        pdf.set_font("Arial", "B", 9)
-        pdf.cell(col_total_w, 6.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, ln=1, align="L", fill=True)
-        current_y = pdf.get_y() + 1
+        # ======= DATOS EQUIPO (BAJO EL TÍTULO, AL LADO DEL LOGO) =======
+        current_y = 16
+        line_h = 3.6
+        label_w = 32.0
+        x_start = logo_x + LOGO_W_MM + 4
 
         # Fecha
-        pdf.set_xy(SIDE_MARGIN, current_y)
+        pdf.set_xy(x_start, current_y)
         pdf.set_font("Arial", "B", 7.5); pdf.cell(15, line_h, "FECHA:", 0, 0)
         pdf.set_font("Arial", "", 7.5)
         pdf.cell(10, line_h, f"{fecha.day:02d}", 1, 0, "C")
         pdf.cell(10, line_h, f"{fecha.month:02d}", 1, 0, "C")
         pdf.cell(14, line_h, f"{fecha.year:04d}", 1, 1, "C")
-        current_y = pdf.get_y()
+        current_y += line_h + 1
 
-        def draw_info_field(lbl, val, y_pos):
-            pdf.set_xy(SIDE_MARGIN, y_pos)
-            pdf.set_font("Arial", "B", 7.5)
+        def header_field(lbl, val, y_pos):
+            pdf.set_xy(x_start, y_pos); pdf.set_font("Arial", "B", 7.5)
             pdf.cell(label_w, line_h, lbl, 0, 0, "L")
             pdf.set_font("Arial", "", 7.5)
             pdf.cell(2, line_h, ":", 0, 0, "C")
             pdf.cell(0, line_h, str(val), 0, 1, "L")
 
-        draw_info_field("MARCA", marca, current_y); current_y += line_h
-        draw_info_field("MODELO", modelo, current_y); current_y += line_h
-        draw_info_field("NUMERO DE SERIE", sn, current_y); current_y += line_h
-        draw_info_field("N/INVENTARIO", inventario, current_y); current_y += line_h
-        draw_info_field("UBICACIÓN", ubicacion, current_y); current_y += line_h
+        header_field("MARCA", marca, current_y); current_y += line_h
+        header_field("MODELO", modelo, current_y); current_y += line_h
+        header_field("NUMERO DE SERIE", sn, current_y); current_y += line_h
+        header_field("N/INVENTARIO", inventario, current_y); current_y += line_h
+        header_field("UBICACIÓN", ubicacion, current_y)
 
-        # ======= CUERPO DEL DOCUMENTO =======
-        pdf.ln(2); start_y_tables = pdf.get_y()
+        # ======= TABLAS =======
+        pdf.ln(3); start_y_tables = pdf.get_y()
         ITEM_W = max(62.0, col_total_w - 36.0)
-        
-        # Columna Izquierda (Tablas)
         create_checkbox_table(pdf, "1. Chequeo visual y comprobaciones", chequeo_visual, SIDE_MARGIN, ITEM_W, 12.0)
         create_checkbox_table(pdf, "2. Verificación de parámetros y funciones", verif_param, SIDE_MARGIN, ITEM_W, 12.0)
         create_checkbox_table(pdf, "3. Mediciones seguridad eléctrica", seg_electrica, SIDE_MARGIN, ITEM_W, 12.0)
@@ -293,8 +290,7 @@ def main():
         pdf.cell(col_total_w, 4.0, "    4. Instrumentos de análisis", border=1, ln=1, fill=True)
         draw_analisis_columns(pdf, SIDE_MARGIN, pdf.get_y()+1, col_total_w, st.session_state.analisis_equipos)
 
-        # Columna Derecha
-        SECOND_COL_LEFT = SIDE_MARGIN + col_total_w + 6
+        # ======= COLUMNA DERECHA =======
         pdf.set_y(start_y_tables)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 20, "Observaciones", observaciones)
         pdf.ln(2)
