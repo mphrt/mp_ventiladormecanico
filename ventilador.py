@@ -62,7 +62,10 @@ def _crop_signature(canvas_result):
     img_byte_arr.seek(0)
     return img_byte_arr
 
-def add_signature_inline(pdf_obj, canvas_result, x, y, w_mm=65, h_mm=20):
+def add_signature_inline(pdf_obj, canvas_result, x_target_center, y, max_w=65, max_h=20):
+    """
+    Dibuja la firma centrada en x_target_center.
+    """
     img_byte_arr = _crop_signature(canvas_result)
     if not img_byte_arr:
         return
@@ -71,12 +74,17 @@ def add_signature_inline(pdf_obj, canvas_result, x, y, w_mm=65, h_mm=20):
         tmp_path = tmp_file.name
     try:
         img = Image.open(tmp_path)
-        img_w = w_mm
-        img_h = (img.height / img.width) * img_w
-        if img_h > h_mm:
-            img_h = h_mm
-            img_w = (img.width / img.height) * img_h
-        pdf_obj.image(tmp_path, x=x, y=y, w=img_w, h=img_h)
+        img_w, img_h = img.size
+        
+        # Calcular escala manteniendo ratio
+        ratio = min(max_w / img_w, max_h / img_h)
+        final_w = img_w * ratio
+        final_h = img_h * ratio
+        
+        # Calcular X para que el centro de la imagen coincida con x_target_center
+        x_pos = x_target_center - (final_w / 2)
+        
+        pdf_obj.image(tmp_path, x=x_pos, y=y, w=final_w, h=final_h)
     except Exception as e:
         st.error(f"Error al añadir imagen: {e}")
 
@@ -172,7 +180,6 @@ def draw_analisis_columns(pdf, x_start, y_start, col_w, data_list):
 def main():
     st.title("Pauta de Mantenimiento Preventivo - Ventilador Mecánico")
 
-    # Formato de formulario anterior (Campos agrupados)
     marca = st.text_input("MARCA")
     modelo = st.text_input("MODELO")
     sn = st.text_input("S/N")
@@ -239,7 +246,6 @@ def main():
         try: pdf.image("logo_hrt_final.jpg", x=logo_x, y=logo_y, w=LOGO_W_MM)
         except: pass
 
-        # IDEQ en recuadro superior derecho
         pdf.set_font("Arial", "B", 8)
         ideq_txt = f"IDEQ: {ideq}"
         ideq_w = pdf.get_string_width(ideq_txt) + 4
@@ -251,13 +257,12 @@ def main():
         pdf.set_xy(logo_x + LOGO_W_MM + 4, 12)
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # ======= DATOS EQUIPO (Formato de Marca Modelo como el otro código) =======
+        # ======= DATOS =======
         content_y_base = 19
         pdf.set_y(content_y_base)
         line_h = 3.4
         label_w = 35.0
 
-        # Fecha alineada a la derecha de la primera columna
         x_date = FIRST_TAB_RIGHT - 33.0
         pdf.set_xy(x_date - 15, content_y_base)
         pdf.set_font("Arial", "B", 7.5); pdf.cell(13, line_h, "FECHA:", 0, 0, "R")
@@ -296,32 +301,47 @@ def main():
         draw_si_no_boxes(pdf, SECOND_COL_LEFT, pdf.get_y(), operativo, label_w=40)
         pdf.ln(2)
         
-        # Firma Técnico
+        # Firma Técnico (Centrada en su área)
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
         y_firma_txt = pdf.get_y()
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
         pdf.set_x(SECOND_COL_LEFT); pdf.cell(14, 4.6, "FIRMA:", 0, 0)
-        add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_firma_txt + 4, 55, 18)
+        # Centro de la columna derecha para la firma del técnico
+        center_tecnico = SECOND_COL_LEFT + (col_total_w / 2)
+        add_signature_inline(pdf, canvas_result_tecnico, center_tecnico, y_firma_txt + 4, 55, 18)
         
         pdf.set_y(y_firma_txt + 24)
         pdf.set_x(SECOND_COL_LEFT); pdf.cell(0, 4.0, f"EMPRESA RESPONSABLE: {empresa}", 0, 1)
         pdf.ln(2.0)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 15, "Observaciones (uso interno)", observaciones_interno)
 
-        # Firmas de recepción (Pie de página del contenido)
+        # ======= RECEPCIÓN CONFORME (Centrado de firmas sobre líneas) =======
         pdf.ln(10); y_sigs = pdf.get_y()
-        pdf.line(SECOND_COL_LEFT, y_sigs + 15, SECOND_COL_LEFT + 45, y_sigs + 15)
-        pdf.line(SECOND_COL_LEFT + 55, y_sigs + 15, SECOND_COL_LEFT + 100, y_sigs + 15)
-        pdf.set_font("Arial", "B", 6.5)
-        pdf.set_xy(SECOND_COL_LEFT, y_sigs + 16); pdf.multi_cell(45, 3.5, "RECEPCIÓN CONFORME\nINGENIERÍA CLÍNICA", 0, "C")
-        pdf.set_xy(SECOND_COL_LEFT + 55, y_sigs + 16); pdf.multi_cell(45, 3.5, "RECEPCIÓN CONFORME\nPERSONAL CLÍNICO", 0, "C")
+        line_w = 45
+        gap_between_lines = 10
         
-        # Añadir firmas a los recuadros de recepción
-        add_signature_inline(pdf, canvas_result_ingenieria, SECOND_COL_LEFT + 5, y_sigs - 2, 35, 15)
-        add_signature_inline(pdf, canvas_result_clinico, SECOND_COL_LEFT + 60, y_sigs - 2, 35, 15)
+        # Coordenadas X de inicio de las líneas
+        x_line1 = SECOND_COL_LEFT
+        x_line2 = SECOND_COL_LEFT + line_w + gap_between_lines
+        
+        # Dibujar líneas
+        pdf.line(x_line1, y_sigs + 15, x_line1 + line_w, y_sigs + 15)
+        pdf.line(x_line2, y_sigs + 15, x_line2 + line_w, y_sigs + 15)
+        
+        # Textos debajo de las líneas
+        pdf.set_font("Arial", "B", 6.5)
+        pdf.set_xy(x_line1, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nINGENIERÍA CLÍNICA", 0, "C")
+        pdf.set_xy(x_line2, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nPERSONAL CLÍNICO", 0, "C")
+        
+        # Calcular centros de cada línea para las firmas
+        center_sig1 = x_line1 + (line_w / 2)
+        center_sig2 = x_line2 + (line_w / 2)
+        
+        # Añadir firmas centradas (y_sigs - altura_firma para que queden sobre la línea)
+        add_signature_inline(pdf, canvas_result_ingenieria, center_sig1, y_sigs - 2, 35, 15)
+        add_signature_inline(pdf, canvas_result_clinico, center_sig2, y_sigs - 2, 35, 15)
 
         out = pdf.output(dest="S")
-        # Nombre de documento con IDEQ al comienzo
         final_filename = f"{ideq}_MP_Ventilador_{sn}.pdf" if ideq else f"MP_Ventilador_{sn}.pdf"
         st.download_button("Descargar PDF", bytes(out), file_name=final_filename, mime="application/pdf")
 
