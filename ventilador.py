@@ -76,7 +76,6 @@ def add_signature_inline(pdf_obj, canvas_result, x_target_center, y, max_w=65, m
         final_w = img_w * ratio
         final_h = img_h * ratio
         
-        # Si centered es True, x_target_center es el centro. Si no, es la posición X inicial.
         x_pos = x_target_center - (final_w / 2) if centered else x_target_center
         
         pdf_obj.image(tmp_path, x=x_pos, y=y, w=final_w, h=final_h)
@@ -236,8 +235,9 @@ def main():
         FIRST_TAB_RIGHT = SIDE_MARGIN + col_total_w
         SECOND_COL_LEFT = FIRST_TAB_RIGHT + 6
 
-        # ======= ENCABEZADO =======
-        logo_x, logo_y, LOGO_W_MM = 2, 2, 60
+        # ======= ENCABEZADO (BAJADO 20mm) =======
+        # Originalmente y era 4 o 12. Ahora sumamos +20.
+        logo_x, logo_y, LOGO_W_MM = 2, 22, 60 # Antes y=2
         try: pdf.image("logo_hrt_final.jpg", x=logo_x, y=logo_y, w=LOGO_W_MM)
         except: pass
 
@@ -245,15 +245,15 @@ def main():
         ideq_txt = f"IDEQ: {ideq}"
         ideq_w = pdf.get_string_width(ideq_txt) + 4
         pdf.set_fill_color(230, 230, 230)
-        pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4)
+        pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 24) # Antes y=4
         pdf.cell(ideq_w, 4.5, ideq_txt, border=1, align="C", fill=True)
 
         pdf.set_font("Arial", "B", 7)
-        pdf.set_xy(logo_x + LOGO_W_MM + 4, 12)
+        pdf.set_xy(logo_x + LOGO_W_MM + 4, 32) # Antes y=12
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # ======= DATOS EQUIPO =======
-        content_y_base = 19
+        # ======= DATOS EQUIPO (BAJADO 20mm adicionales) =======
+        content_y_base = 39 # Antes y=19 (19 + 20 = 39)
         pdf.set_y(content_y_base)
         line_h = 3.4
         label_w = 35.0
@@ -298,14 +298,21 @@ def main():
         
         # --- Firma Técnico ---
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
-        y_nombre_tecnico = pdf.get_y()
+        y_label_tecnico = pdf.get_y()
+        # El texto tiene una altura de 4.6
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
-        pdf.set_x(SECOND_COL_LEFT); pdf.cell(14, 4.6, "FIRMA:", 0, 0)
         
-        # Firma con separación de 4mm y alineada a la izquierda (no centrada)
-        add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_nombre_tecnico + 4, 55, 18, centered=False)
+        # Para dejar 4mm de separación exacta:
+        # y_label_tecnico + altura_celda(4.6) + 4mm = y_firma
+        y_firma_tecnico = y_label_tecnico + 4.6 + 4.0
         
-        pdf.set_y(y_nombre_tecnico + 24)
+        pdf.set_xy(SECOND_COL_LEFT, y_firma_tecnico)
+        pdf.cell(14, 4.6, "FIRMA:", 0, 0)
+        
+        # Agregamos la firma alineada a la izquierda (centered=False)
+        add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_firma_tecnico, 55, 18, centered=False)
+        
+        pdf.set_y(y_firma_tecnico + 20) # Espacio para la firma
         pdf.set_x(SECOND_COL_LEFT); pdf.cell(0, 4.0, f"EMPRESA RESPONSABLE: {empresa}", 0, 1)
         pdf.ln(2.0)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 15, "Observaciones (uso interno)", observaciones_interno)
@@ -316,21 +323,17 @@ def main():
         gap_sigs = 8
         total_block_w = (line_w * 2) + gap_sigs
         
-        # Calculamos el inicio para que el bloque de firmas esté centrado en la segunda columna
         x_start_sigs = SECOND_COL_LEFT + (col_total_w / 2) - (total_block_w / 2)
         x_line1 = x_start_sigs
         x_line2 = x_start_sigs + line_w + gap_sigs
         
-        # Líneas
         pdf.line(x_line1, y_sigs + 15, x_line1 + line_w, y_sigs + 15)
         pdf.line(x_line2, y_sigs + 15, x_line2 + line_w, y_sigs + 15)
         
-        # Textos
         pdf.set_font("Arial", "B", 6.5)
         pdf.set_xy(x_line1, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nINGENIERÍA CLÍNICA", 0, "C")
         pdf.set_xy(x_line2, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nPERSONAL CLÍNICO", 0, "C")
         
-        # Imágenes centradas sobre cada línea
         add_signature_inline(pdf, canvas_result_ingenieria, x_line1 + (line_w/2), y_sigs - 2, 35, 15, centered=True)
         add_signature_inline(pdf, canvas_result_clinico, x_line2 + (line_w/2), y_sigs - 2, 35, 15, centered=True)
 
