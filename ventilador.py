@@ -75,9 +75,7 @@ def add_signature_inline(pdf_obj, canvas_result, x_target_center, y, max_w=65, m
         ratio = min(max_w / img_w, max_h / img_h)
         final_w = img_w * ratio
         final_h = img_h * ratio
-        
         x_pos = x_target_center - (final_w / 2) if centered else x_target_center
-        
         pdf_obj.image(tmp_path, x=x_pos, y=y, w=final_w, h=final_h)
     except Exception as e:
         st.error(f"Error al añadir imagen: {e}")
@@ -235,7 +233,7 @@ def main():
         FIRST_TAB_RIGHT = SIDE_MARGIN + col_total_w
         SECOND_COL_LEFT = FIRST_TAB_RIGHT + 6
 
-        # ======= ENCABEZADO (Restaurado a Posición Original) =======
+        # ======= ENCABEZADO (POSICIÓN ORIGINAL) =======
         logo_x, logo_y, LOGO_W_MM = 2, 2, 60
         try: pdf.image("logo_hrt_final.jpg", x=logo_x, y=logo_y, w=LOGO_W_MM)
         except: pass
@@ -244,24 +242,23 @@ def main():
         ideq_txt = f"IDEQ: {ideq}"
         ideq_w = pdf.get_string_width(ideq_txt) + 4
         pdf.set_fill_color(230, 230, 230)
-        pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4) # Posición original
+        pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4)
         pdf.cell(ideq_w, 4.5, ideq_txt, border=1, align="C", fill=True)
 
-        # Título de la Pauta (Bajado 20mm según solicitud anterior)
         pdf.set_font("Arial", "B", 7)
-        pdf.set_xy(logo_x + LOGO_W_MM + 4, 32) # Manteniendo el título bajo
+        pdf.set_xy(logo_x + LOGO_W_MM + 4, 12) 
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # ======= DATOS EQUIPO (Bajado 20mm) =======
-        content_y_base = 39 # 19 original + 20 solicitado
-        pdf.set_y(content_y_base)
+        # ======= PRIMERA COLUMNA (SUBIDA 10mm -> de 39 a 29) =======
+        content_y_left = 29 
+        pdf.set_y(content_y_left)
         line_h = 3.4
         label_w = 35.0
 
         x_date = FIRST_TAB_RIGHT - 33.0
-        pdf.set_xy(x_date - 15, content_y_base)
+        pdf.set_xy(x_date - 15, content_y_left)
         pdf.set_font("Arial", "B", 7.5); pdf.cell(13, line_h, "FECHA:", 0, 0, "R")
-        pdf.set_font("Arial", "", 7.5); pdf.set_xy(x_date, content_y_base)
+        pdf.set_font("Arial", "", 7.5); pdf.set_xy(x_date, content_y_left)
         pdf.cell(11, line_h, f"{fecha.day:02d}", 1, 0, "C")
         pdf.cell(11, line_h, f"{fecha.month:02d}", 1, 0, "C")
         pdf.cell(11, line_h, f"{fecha.year:04d}", 1, 1, "C")
@@ -278,34 +275,31 @@ def main():
         left_field("N/INVENTARIO", inventario)
         left_field("UBICACIÓN", ubicacion)
 
-        # ======= TABLAS =======
-        pdf.ln(2.6); start_y_tables = pdf.get_y()
+        pdf.ln(2.6)
         ITEM_W = max(62.0, col_total_w - 36.0)
         create_checkbox_table(pdf, "1. Chequeo visual y comprobaciones", chequeo_visual, SIDE_MARGIN, ITEM_W, 12.0)
         create_checkbox_table(pdf, "2. Verificación de parámetros y funciones", verif_param, SIDE_MARGIN, ITEM_W, 12.0)
         create_checkbox_table(pdf, "3. Mediciones seguridad eléctrica", seg_electrica, SIDE_MARGIN, ITEM_W, 12.0)
-        
         pdf.set_x(SIDE_MARGIN); pdf.set_fill_color(230, 230, 230); pdf.set_font("Arial", "B", 7.5)
         pdf.cell(col_total_w, 4.0, "    4. Instrumentos de análisis", border=1, ln=1, fill=True)
         draw_analisis_columns(pdf, SIDE_MARGIN, pdf.get_y()+1, col_total_w, st.session_state.analisis_equipos)
 
-        # ======= COLUMNA DERECHA =======
-        pdf.set_y(start_y_tables)
+        # ======= SEGUNDA COLUMNA (POSICIÓN ORIGINAL / NO MOVIDA) =======
+        # Ajustamos start_y_right para que coincida con el inicio original de las tablas
+        start_y_right = 39 
+        pdf.set_y(start_y_right)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 20, "Observaciones", observaciones)
         pdf.ln(2)
         draw_si_no_boxes(pdf, SECOND_COL_LEFT, pdf.get_y(), operativo, label_w=40)
         pdf.ln(2)
         
-        # --- Firma Técnico ---
+        # Firma Técnico
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
         y_label_tecnico = pdf.get_y()
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
-        
-        # Separación de 4mm bajo el nombre
-        y_firma_tecnico = y_label_tecnico + 4.6 + 4.0
+        y_firma_tecnico = y_label_tecnico + 4.6 + 4.0 # 4mm de separación exacta
         pdf.set_xy(SECOND_COL_LEFT, y_firma_tecnico)
         pdf.cell(14, 4.6, "FIRMA:", 0, 0)
-        
         add_signature_inline(pdf, canvas_result_tecnico, SECOND_COL_LEFT + 20, y_firma_tecnico, 55, 18, centered=False)
         
         pdf.set_y(y_firma_tecnico + 20)
@@ -313,25 +307,21 @@ def main():
         pdf.ln(2.0)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 15, "Observaciones (uso interno)", observaciones_interno)
 
-        # ======= RECEPCIÓN CONFORME (Centrado en Columna 2) =======
+        # Recepción Conforme (Centrado en Columna 2)
         pdf.ln(10); y_sigs = pdf.get_y()
-        line_w = 40
-        gap_sigs = 8
+        line_w, gap_sigs = 40, 8
         total_block_w = (line_w * 2) + gap_sigs
-        
         x_start_sigs = SECOND_COL_LEFT + (col_total_w / 2) - (total_block_w / 2)
-        x_line1 = x_start_sigs
-        x_line2 = x_start_sigs + line_w + gap_sigs
         
-        pdf.line(x_line1, y_sigs + 15, x_line1 + line_w, y_sigs + 15)
-        pdf.line(x_line2, y_sigs + 15, x_line2 + line_w, y_sigs + 15)
+        pdf.line(x_start_sigs, y_sigs + 15, x_start_sigs + line_w, y_sigs + 15)
+        pdf.line(x_start_sigs + line_w + gap_sigs, y_sigs + 15, x_start_sigs + line_w + gap_sigs + line_w, y_sigs + 15)
         
         pdf.set_font("Arial", "B", 6.5)
-        pdf.set_xy(x_line1, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nINGENIERÍA CLÍNICA", 0, "C")
-        pdf.set_xy(x_line2, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nPERSONAL CLÍNICO", 0, "C")
+        pdf.set_xy(x_start_sigs, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nINGENIERÍA CLÍNICA", 0, "C")
+        pdf.set_xy(x_start_sigs + line_w + gap_sigs, y_sigs + 16); pdf.multi_cell(line_w, 3.5, "RECEPCIÓN CONFORME\nPERSONAL CLÍNICO", 0, "C")
         
-        add_signature_inline(pdf, canvas_result_ingenieria, x_line1 + (line_w/2), y_sigs - 2, 35, 15, centered=True)
-        add_signature_inline(pdf, canvas_result_clinico, x_line2 + (line_w/2), y_sigs - 2, 35, 15, centered=True)
+        add_signature_inline(pdf, canvas_result_ingenieria, x_start_sigs + (line_w/2), y_sigs - 2, 35, 15, centered=True)
+        add_signature_inline(pdf, canvas_result_clinico, x_start_sigs + line_w + gap_sigs + (line_w/2), y_sigs - 2, 35, 15, centered=True)
 
         out = pdf.output(dest="S")
         final_filename = f"{ideq}_MP_Ventilador_{sn}.pdf" if ideq else f"MP_Ventilador_{sn}.pdf"
