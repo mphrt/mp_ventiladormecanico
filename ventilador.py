@@ -14,6 +14,15 @@ FOOTER_LINES = [
     "HOSPITAL REGIONAL DE TALCA",
 ]
 
+# ========= Lista de Marcas =========
+MARCAS_LISTA = [
+    "", # Para que el recuadro comience vacío
+    "VIASYS", "SENSORMEDICS", "DRAGER", "CAREFUSION", "NEWPORT", 
+    "BIOMED", "HAMILTON", "PURITAN BENNETT", "MEK", "AEONMED", 
+    "SLE", "AIRLIQUIDE", "PHILIPS", "RESMED", "NIHON KOHDEN",
+    "+ Añadir nueva marca"
+]
+
 class PDF(FPDF):
     def __init__(self, *args, footer_lines=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -173,7 +182,15 @@ def main():
     st.title("Pauta de Mantenimiento Preventivo - Ventilador Mecánico")
 
     ideq = st.text_input("IDEQ")
-    marca = st.text_input("MARCA")
+    
+    # --- MODIFICACIÓN MARCA ---
+    marca_seleccionada = st.selectbox("MARCA", MARCAS_LISTA)
+    if marca_seleccionada == "+ Añadir nueva marca":
+        marca = st.text_input("Especifique la nueva marca")
+    else:
+        marca = marca_seleccionada
+    # --------------------------
+
     modelo = st.text_input("MODELO")
     sn = st.text_input("NÚMERO DE SERIE")
     inventario = st.text_input("NÚMERO DE INVENTARIO")
@@ -233,7 +250,6 @@ def main():
         FIRST_TAB_RIGHT = SIDE_MARGIN + col_total_w
         SECOND_COL_LEFT = FIRST_TAB_RIGHT + 6
 
-        # ======= ENCABEZADO (POSICIÓN ORIGINAL) =======
         logo_x, logo_y, LOGO_W_MM = 2, 2, 60
         try: pdf.image("logo_hrt_final.jpg", x=logo_x, y=logo_y, w=LOGO_W_MM)
         except: pass
@@ -245,12 +261,10 @@ def main():
         pdf.set_xy(page_w - SIDE_MARGIN - ideq_w, 4)
         pdf.cell(ideq_w, 4.5, ideq_txt, border=1, align="C", fill=True)
 
-        # ======= AJUSTE: Título Bajado 6mm (de 12 a 18) =======
         pdf.set_font("Arial", "B", 7)
         pdf.set_xy(logo_x + LOGO_W_MM + 4, 18) 
         pdf.cell(FIRST_TAB_RIGHT - (logo_x + LOGO_W_MM + 4), 5.0, "PAUTA MANTENCIÓN VENTILADOR MECÁNICO", border=1, align="C", fill=True)
 
-        # ======= PRIMERA COLUMNA (SUBIDA 10mm -> de 39 a 29) =======
         content_y_left = 29 
         pdf.set_y(content_y_left)
         line_h = 3.4
@@ -285,7 +299,6 @@ def main():
         pdf.cell(col_total_w, 4.0, "    4. Instrumentos de análisis", border=1, ln=1, fill=True)
         draw_analisis_columns(pdf, SIDE_MARGIN, pdf.get_y()+1, col_total_w, st.session_state.analisis_equipos)
 
-        # ======= SEGUNDA COLUMNA (POSICIÓN ORIGINAL / NO MOVIDA) =======
         start_y_right = 39 
         pdf.set_y(start_y_right)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 20, "Observaciones", observaciones)
@@ -293,7 +306,6 @@ def main():
         draw_si_no_boxes(pdf, SECOND_COL_LEFT, pdf.get_y(), operativo, label_w=40)
         pdf.ln(2)
         
-        # Firma Técnico
         pdf.set_x(SECOND_COL_LEFT); pdf.set_font("Arial", "", 7.5)
         y_label_tecnico = pdf.get_y()
         pdf.cell(0, 4.6, f"NOMBRE TÉCNICO/INGENIERO: {tecnico}", 0, 1)
@@ -307,7 +319,6 @@ def main():
         pdf.ln(2.0)
         draw_boxed_text_auto(pdf, SECOND_COL_LEFT, pdf.get_y(), col_total_w, 15, "Observaciones (uso interno)", observaciones_interno)
 
-        # Recepción Conforme (Centrado en Columna 2)
         pdf.ln(10); y_sigs = pdf.get_y()
         line_w, gap_sigs = 40, 8
         total_block_w = (line_w * 2) + gap_sigs
