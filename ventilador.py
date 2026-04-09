@@ -20,9 +20,16 @@ MARCAS_BASE = [
     "BIOMED", "HAMILTON", "PURITAN BENNETT", "MEK", "AEONMED", 
     "SLE", "AIRLIQUIDE", "PHILIPS", "RESMED", "NIHON KOHDEN"
 ]
-
-# Ordenar alfabéticamente, añadir vacío al inicio y opción extra al final
 MARCAS_LISTA = [""] + sorted(MARCAS_BASE) + ["+ Añadir nueva marca"]
+
+# ========= Configuración de Modelos =========
+MODELOS_BASE = [
+    "AVEA", "3100A", "3100B", "OXYLOG3000", "OXYLOG3000 PLUS", 
+    "TRILOGY 202", "HT70 PLUS", "TV-100", "T1", "BABYLOG VN500", 
+    "840", "980", "MV2000 EVO5", "VG70", "SLE6000", "MONNAL T60", 
+    "V60", "STELLAR 100", "TRILOGY EVO", "TRILOGY EV300", "NKV-330"
+]
+MODELOS_LISTA = [""] + sorted(MODELOS_BASE) + ["+ Añadir nuevo modelo"]
 
 class PDF(FPDF):
     def __init__(self, *args, footer_lines=None, **kwargs):
@@ -191,7 +198,13 @@ def main():
     else:
         marca = marca_input
 
-    modelo = st.text_input("MODELO")
+    # --- Selección de Modelo ---
+    modelo_input = st.selectbox("MODELO", MODELOS_LISTA)
+    if modelo_input == "+ Añadir nuevo modelo":
+        modelo = st.text_input("Escribe el nombre del nuevo modelo")
+    else:
+        modelo = modelo_input
+
     sn = st.text_input("NÚMERO DE SERIE")
     inventario = st.text_input("NÚMERO DE INVENTARIO")
     fecha = st.date_input("FECHA", value=datetime.date.today())
