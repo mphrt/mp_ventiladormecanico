@@ -14,14 +14,15 @@ FOOTER_LINES = [
     "HOSPITAL REGIONAL DE TALCA",
 ]
 
-# ========= Lista de Marcas =========
-MARCAS_LISTA = [
-    "", # Para que el recuadro comience vacío
+# ========= Configuración de Marcas =========
+MARCAS_BASE = [
     "VIASYS", "SENSORMEDICS", "DRAGER", "CAREFUSION", "NEWPORT", 
     "BIOMED", "HAMILTON", "PURITAN BENNETT", "MEK", "AEONMED", 
-    "SLE", "AIRLIQUIDE", "PHILIPS", "RESMED", "NIHON KOHDEN",
-    "+ Añadir nueva marca"
+    "SLE", "AIRLIQUIDE", "PHILIPS", "RESMED", "NIHON KOHDEN"
 ]
+
+# Ordenar alfabéticamente, añadir vacío al inicio y opción extra al final
+MARCAS_LISTA = [""] + sorted(MARCAS_BASE) + ["+ Añadir nueva marca"]
 
 class PDF(FPDF):
     def __init__(self, *args, footer_lines=None, **kwargs):
@@ -183,13 +184,12 @@ def main():
 
     ideq = st.text_input("IDEQ")
     
-    # --- MODIFICACIÓN MARCA ---
-    marca_seleccionada = st.selectbox("MARCA", MARCAS_LISTA)
-    if marca_seleccionada == "+ Añadir nueva marca":
-        marca = st.text_input("Especifique la nueva marca")
+    # --- Selección de Marca ---
+    marca_input = st.selectbox("MARCA", MARCAS_LISTA)
+    if marca_input == "+ Añadir nueva marca":
+        marca = st.text_input("Escribe el nombre de la nueva marca")
     else:
-        marca = marca_seleccionada
-    # --------------------------
+        marca = marca_input
 
     modelo = st.text_input("MODELO")
     sn = st.text_input("NÚMERO DE SERIE")
