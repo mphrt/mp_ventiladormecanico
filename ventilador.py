@@ -300,7 +300,7 @@ def main():
         left_field("MARCA", marca)
         left_field("MODELO", modelo)
         left_field("NÚMERO DE SERIE", sn)
-        left_field("N/INVENTARIO", inventario)
+        left_field("NÚMERO DE INVENTARIO", inventario)
         left_field("UBICACIÓN", ubicacion)
 
         pdf.ln(2.6)
