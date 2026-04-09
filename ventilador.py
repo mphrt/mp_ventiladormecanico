@@ -172,11 +172,11 @@ def draw_analisis_columns(pdf, x_start, y_start, col_w, data_list):
 def main():
     st.title("Pauta de Mantenimiento Preventivo - Ventilador Mecánico")
 
+    ideq = st.text_input("IDEQ")
     marca = st.text_input("MARCA")
     modelo = st.text_input("MODELO")
     sn = st.text_input("NÚMERO DE SERIE")
-    ideq = st.text_input("IDEQ")
-    inventario = st.text_input("N/INVENTARIO")
+    inventario = st.text_input("NÚMERO DE INVENTARIO")
     fecha = st.date_input("FECHA", value=datetime.date.today())
     ubicacion = st.text_input("UBICACIÓN")
 
